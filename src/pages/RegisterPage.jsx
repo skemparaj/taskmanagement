@@ -172,7 +172,13 @@ const RegisterPage = () => {
           </div>
 
           {/* Submit */}
-          <Button type="submit" loading={loading} className="w-full">
+          <Button
+            type="submit"
+            loading={loading}
+            disabled={!isFirebaseConfigured}
+            className="w-full"
+            title={!isFirebaseConfigured ? 'Firebase is not configured. Use Demo Mode.' : 'Create Account'}
+          >
             <UserPlus size={16} /> Create Account
           </Button>
 
