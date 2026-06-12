@@ -65,9 +65,26 @@ const DashboardPage = () => {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [sortBy, setSortBy] = useState('createdAt');
 
-  // ─── Firestore Real-time Listener ───────────────────────────
+  // ─── Firestore Real-time / LocalStorage Listener ───────────────────────────
   useEffect(() => {
     if (!user) return;
+
+    if (user.uid === 'demo-user-123') {
+      const loadLocalTasks = () => {
+        const localTasks = JSON.parse(localStorage.getItem('taskflow_demo_tasks') || '[]');
+        setTasks(localTasks);
+        setLoading(false);
+      };
+      loadLocalTasks();
+      window.addEventListener('storage', loadLocalTasks);
+      return () => window.removeEventListener('storage', loadLocalTasks);
+    }
+
+    if (!db) {
+      toast.error('Database connection not available. Running in local mode.');
+      setLoading(false);
+      return;
+    }
 
     // Subscribe to user's tasks, ordered by createdAt descending
     const q = query(
@@ -150,8 +167,8 @@ const DashboardPage = () => {
     // Sort tasks
     return [...result].sort((a, b) => {
       if (sortBy === 'createdAt') {
-        const timeA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : 0;
-        const timeB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : 0;
+        const timeA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
+        const timeB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
         return timeB - timeA;
       }
       
@@ -191,6 +208,21 @@ const DashboardPage = () => {
   const handleCreateTask = async (taskData) => {
     setFormLoading(true);
     try {
+      if (user.uid === 'demo-user-123') {
+        const newTask = {
+          id: 'local-' + Date.now(),
+          ...taskData,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        const updated = [newTask, ...tasks];
+        localStorage.setItem('taskflow_demo_tasks', JSON.stringify(updated));
+        setTasks(updated);
+        toast.success('Task created! ✅');
+        setIsModalOpen(false);
+        return;
+      }
+
       await addDoc(collection(db, 'users', user.uid, 'tasks'), {
         ...taskData,
         createdAt: serverTimestamp(),
@@ -211,6 +243,20 @@ const DashboardPage = () => {
     if (!editingTask) return;
     setFormLoading(true);
     try {
+      if (user.uid === 'demo-user-123') {
+        const updated = tasks.map((t) =>
+          t.id === editingTask.id
+            ? { ...t, ...taskData, updatedAt: new Date().toISOString() }
+            : t
+        );
+        localStorage.setItem('taskflow_demo_tasks', JSON.stringify(updated));
+        setTasks(updated);
+        toast.success('Task updated! ✏️');
+        setIsModalOpen(false);
+        setEditingTask(null);
+        return;
+      }
+
       await updateDoc(doc(db, 'users', user.uid, 'tasks', editingTask.id), {
         ...taskData,
         updatedAt: serverTimestamp(),
@@ -229,6 +275,14 @@ const DashboardPage = () => {
   // DELETE a task
   const handleDeleteTask = async (taskId) => {
     try {
+      if (user.uid === 'demo-user-123') {
+        const updated = tasks.filter((t) => t.id !== taskId);
+        localStorage.setItem('taskflow_demo_tasks', JSON.stringify(updated));
+        setTasks(updated);
+        toast.success('Task deleted. 🗑️');
+        return;
+      }
+
       await deleteDoc(doc(db, 'users', user.uid, 'tasks', taskId));
       toast.success('Task deleted. 🗑️');
     } catch (error) {
@@ -246,6 +300,18 @@ const DashboardPage = () => {
       newStatus = task.status === 'completed' ? 'todo' : 'completed';
     }
     try {
+      if (user.uid === 'demo-user-123') {
+        const updated = tasks.map((t) =>
+          t.id === task.id
+            ? { ...t, status: newStatus, updatedAt: new Date().toISOString() }
+            : t
+        );
+        localStorage.setItem('taskflow_demo_tasks', JSON.stringify(updated));
+        setTasks(updated);
+        toast.success(newStatus === 'completed' ? 'Task completed! 🎉' : 'Task status updated.');
+        return;
+      }
+
       await updateDoc(doc(db, 'users', user.uid, 'tasks', task.id), {
         status: newStatus,
         updatedAt: serverTimestamp(),
@@ -262,6 +328,17 @@ const DashboardPage = () => {
     const updatedSubtasks = [...task.subtasks];
     updatedSubtasks[subtaskIndex].completed = !updatedSubtasks[subtaskIndex].completed;
     try {
+      if (user.uid === 'demo-user-123') {
+        const updated = tasks.map((t) =>
+          t.id === task.id
+            ? { ...t, subtasks: updatedSubtasks, updatedAt: new Date().toISOString() }
+            : t
+        );
+        localStorage.setItem('taskflow_demo_tasks', JSON.stringify(updated));
+        setTasks(updated);
+        return;
+      }
+
       await updateDoc(doc(db, 'users', user.uid, 'tasks', task.id), {
         subtasks: updatedSubtasks,
         updatedAt: serverTimestamp(),

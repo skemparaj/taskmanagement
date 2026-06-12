@@ -19,15 +19,24 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-console.log("API KEY:", import.meta.env.VITE_FIREBASE_API_KEY);
-console.log("AUTH DOMAIN:", import.meta.env.VITE_FIREBASE_AUTH_DOMAIN);
-console.log("API KEY =", import.meta.env.VITE_FIREBASE_API_KEY);
-alert(import.meta.env.VITE_FIREBASE_API_KEY);
+// Initialize Firebase conditionally to prevent crashes when environment variables are missing
+const isFirebaseConfigured = !!firebaseConfig.apiKey && firebaseConfig.apiKey !== 'undefined';
 
-// Initialize Firebase services
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+let app = null;
+let auth = null;
+let db = null;
 
+if (isFirebaseConfigured) {
+  try {
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+  } catch (error) {
+    console.error('Failed to initialize Firebase services:', error);
+  }
+} else {
+  console.warn('Firebase API Key is missing. App is running in Local Storage / Offline mode.');
+}
+
+export { auth, db };
 export default app;

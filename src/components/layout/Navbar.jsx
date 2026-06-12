@@ -159,8 +159,11 @@ const Navbar = ({ activeTab = 'dashboard' }) => {
           {/* User profile detail */}
           <div className="flex items-center gap-3">
             <div className="hidden md:block text-right">
-              <p className="text-sm font-semibold text-slate-800 dark:text-white">
+              <p className="text-sm font-semibold text-slate-800 dark:text-white flex items-center justify-end gap-1.5">
                 {user?.displayName || 'User'}
+                {user?.uid === 'demo-user-123' && (
+                  <span className="px-1.5 py-0.5 text-[10px] font-black uppercase rounded bg-amber-150 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400">Offline</span>
+                )}
               </p>
               <p className="text-[11px] text-slate-400">
                 {user?.email}

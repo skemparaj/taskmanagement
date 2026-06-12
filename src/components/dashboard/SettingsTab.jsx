@@ -30,7 +30,7 @@ const SettingsTab = () => {
 
     setLoading(true);
     try {
-      if (auth.currentUser) {
+      if (auth && auth.currentUser) {
         await updateProfile(auth.currentUser, {
           displayName: displayName.trim()
         });
@@ -41,6 +41,18 @@ const SettingsTab = () => {
         toast.success('Profile updated successfully! ✏️');
         
         // Force refresh the page after a short delay to update context everywhere
+        setTimeout(() => {
+          window.location.reload();
+        }, 1200);
+      } else {
+        // Local Demo Mode update
+        const demoUser = JSON.parse(localStorage.getItem('taskflow_demo_user') || '{}');
+        demoUser.displayName = displayName.trim();
+        localStorage.setItem('taskflow_demo_user', JSON.stringify(demoUser));
+        localStorage.setItem('taskflow_avatar_theme', selectedColor);
+        
+        toast.success('Profile updated locally! ✏️');
+        
         setTimeout(() => {
           window.location.reload();
         }, 1200);
@@ -167,7 +179,7 @@ const SettingsTab = () => {
               <CheckCircle2 size={16} /> Authentication
             </span>
             <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-xs font-bold bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400">
-              Verified Firebase Auth
+              {auth ? 'Verified Firebase Auth' : 'LocalStorage Offline Mode'}
             </span>
           </div>
 

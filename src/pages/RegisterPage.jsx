@@ -11,7 +11,7 @@ import Button from '../components/ui/Button';
 import toast from 'react-hot-toast';
 
 const RegisterPage = () => {
-  const { register } = useAuth();
+  const { register, loginDemo, isFirebaseConfigured } = useAuth();
   const navigate = useNavigate();
 
   const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' });
@@ -50,6 +50,8 @@ const RegisterPage = () => {
         toast.error('Please enter a valid email address.');
       } else if (code === 'auth/operation-not-allowed' || code === 'auth/configuration-not-found') {
         toast.error('Email/Password authentication is disabled. Please enable it in your Firebase Console -> Authentication -> Sign-in method.');
+      } else if (code === 'auth/network-request-failed' || error?.message?.includes('not configured')) {
+        toast.error('Firebase not configured or network offline. Please enter Demo Mode!');
       } else {
         toast.error(error?.message || 'Registration failed. Please try again.');
       }
@@ -84,6 +86,16 @@ const RegisterPage = () => {
           <h1 className="text-2xl font-bold font-display text-slate-900 dark:text-white">Create your account</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Start managing your tasks today</p>
         </div>
+
+        {/* Firebase Config Warning if applicable */}
+        {!isFirebaseConfigured && (
+          <div className="mb-6 p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/25 border border-amber-200/50 dark:border-amber-900/30 flex items-start gap-3">
+            <span className="text-lg flex-shrink-0">⚠️</span>
+            <div className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed font-semibold">
+              Firebase configuration not detected. Please add your credentials in Vercel settings or use <strong>Offline / Demo Mode</strong> below.
+            </div>
+          </div>
+        )}
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -162,6 +174,25 @@ const RegisterPage = () => {
           {/* Submit */}
           <Button type="submit" loading={loading} className="w-full">
             <UserPlus size={16} /> Create Account
+          </Button>
+
+          {/* Demo Button */}
+          <div className="relative flex py-2 items-center">
+            <div className="flex-grow border-t border-slate-200 dark:border-white/5"></div>
+            <span className="flex-shrink mx-4 text-xs text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider">or</span>
+            <div className="flex-grow border-t border-slate-200 dark:border-white/5"></div>
+          </div>
+
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => {
+              loginDemo();
+              navigate('/dashboard');
+            }}
+            className="w-full border border-slate-200/50 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/10"
+          >
+            ⚡ Enter Offline / Demo Mode
           </Button>
         </form>
 
